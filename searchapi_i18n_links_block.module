@@ -1,0 +1,94 @@
+<?php
+
+/**
+ * Implements hook_language_switch_links_alter().
+ *
+ * Replaces links with pointers to translated versions of the content.
+ */
+function searchapi_i18n_links_block_language_switch_links_alter(array &$links, $type, $path) {
+  static $is_execute_filter_switch_link;
+  if ($search = search_api_current_search() && !isset($is_execute_filter_switch_link)) {
+    $is_execute_filter_switch_link = true;
+    // dpm($search);
+    // dpm($path);
+//    $search = facetapi_terms_build_search_data();
+//    $searcher = facetapi_terms_get_search_info_index();
+//
+//    $facets = facetapi_get_enabled_facets($searcher, 'block');
+//    $facet = $facets['field_shoes_style'];
+//    $adapter = facetapi_adapter_load($searcher);
+//    $facet_api = new FacetapiFacet($adapter, $facet);
+//    $_GET['q'] = 'shoes/brand/1224/shoes_style/Sneakers-10';
+//    // process facet.
+//    $process = new MyFacetapiFacetProcessor($facet_api);
+//    $process->MyinitUrlProcessor('facetapi_terms');
+////    dpm($search);
+////    return;
+//    dpm(drupal_get_path_alias());
+    $searcher = facetapi_terms_get_search_info_index();
+    $adapter = facetapi_adapter_load($searcher);
+    $adapter->processFacets();
+    $facets = $adapter->getEnabledFacets();
+//    dpm($facets);
+    $allActiveItems = $adapter->getAllActiveItems();
+    // field_clothes_product:field_shoes_size
+//    $fieldinfo = field_info_field('field_shoes_size');
+//      dpm($fieldinfo);
+//      dpm($fieldinfo);
+//      dpm($allActiveItems);
+//      $field_instance = field_info_instance('node', $field_name, $field_collection_name);
+    $process = new FacetapiUrlProcessorPrettyPaths($adapter);
+
+    global $language;
+    foreach ($links as $lancode => &$link) {
+      if ($language->language == $lancode)
+        continue;
+      $paths = array();
+      foreach ($allActiveItems as $item) {
+        $facet = $facets[$item['facets'][0]];
+//        $facet_api = new FacetapiFacet($adapter, $facet);
+//        $process = new MyFacetapiFacetProcessor($facet_api);
+//        $process->MyinitUrlProcessor('facetapi_terms');
+//      $process->getFacetPrettyPathsAlias($facet);
+        $tvalue = searchapi_i18n_links_block_get_field_item($item['field alias'], $item['value'], $lancode);
+        $path = $process->getFacetPath($facet, array($tvalue), 0);
+        $paths[] = trim($path);
+//          $term = searchapi_i18n_links_block_get_field_item_translation($item['field alias'], $item['value'], $link);
+      }
+      // get base path TODO:
+      $process->fetchParams();
+      array_unshift($paths, $process->getBasePath());
+      $links[$lancode]['href'] = implode('', $paths);
+    }
+//      unserialize($str)
+//      serialize($facet);
+//    dpm($search);
+  }
+}
+
+// mysql.
+function searchapi_i18n_links_block_get_field_item($field, $search_id, $lancode) {
+  $field_array = explode(':', $field);
+  $field = $bundle = false;
+  if (count($field_array) > 1) {
+    list($bundle, $field) = $field_array;
+  }
+  else {
+    $field = $field_array[0];
+  }
+  $field_info = field_info_field($field);
+  switch ($field_info['type']) {
+    case "taxonomy_term_reference":
+      $term = taxonomy_term_load($search_id);
+      $tterm = i18n_taxonomy_term_get_translation($term, $lancode);
+      $tvalue = $tterm->tid;
+      break;
+    case "node_reference":
+      if($tn = translation_node_get_translations(node_load($search_id)->tnid)) {
+        $tvalue = $tn[$lancode]->nid;
+      }
+      break;
+  }
+  
+  return $tvalue;
+}
