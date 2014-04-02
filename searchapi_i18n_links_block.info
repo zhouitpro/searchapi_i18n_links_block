@@ -1,4 +1,7 @@
 name = SearchApi i18n Links
-description = SearchApi i18n Links.
+description = SearchApi i18n Links. Translation the facet page language switch Link.
 core = 7.x
 
+dependencies[] = facetapi_pretty_paths
+dependencies[] = facetapi
+dependencies[] = search_api

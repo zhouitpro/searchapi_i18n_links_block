@@ -9,34 +9,16 @@ function searchapi_i18n_links_block_language_switch_links_alter(array &$links, $
   static $is_execute_filter_switch_link;
   if ($search = search_api_current_search() && !isset($is_execute_filter_switch_link)) {
     $is_execute_filter_switch_link = true;
-    // dpm($search);
-    // dpm($path);
-//    $search = facetapi_terms_build_search_data();
-//    $searcher = facetapi_terms_get_search_info_index();
-//
-//    $facets = facetapi_get_enabled_facets($searcher, 'block');
-//    $facet = $facets['field_shoes_style'];
-//    $adapter = facetapi_adapter_load($searcher);
-//    $facet_api = new FacetapiFacet($adapter, $facet);
-//    $_GET['q'] = 'shoes/brand/1224/shoes_style/Sneakers-10';
-//    // process facet.
-//    $process = new MyFacetapiFacetProcessor($facet_api);
-//    $process->MyinitUrlProcessor('facetapi_terms');
-////    dpm($search);
-////    return;
-//    dpm(drupal_get_path_alias());
+
     $searcher = facetapi_terms_get_search_info_index();
     $adapter = facetapi_adapter_load($searcher);
     $adapter->processFacets();
     $facets = $adapter->getEnabledFacets();
-//    dpm($facets);
+
+    // get All active items.
     $allActiveItems = $adapter->getAllActiveItems();
-    // field_clothes_product:field_shoes_size
-//    $fieldinfo = field_info_field('field_shoes_size');
-//      dpm($fieldinfo);
-//      dpm($fieldinfo);
-//      dpm($allActiveItems);
-//      $field_instance = field_info_instance('node', $field_name, $field_collection_name);
+    if(!empty($allActiveItems)) return;
+    
     $process = new FacetapiUrlProcessorPrettyPaths($adapter);
 
     global $language;
@@ -46,27 +28,20 @@ function searchapi_i18n_links_block_language_switch_links_alter(array &$links, $
       $paths = array();
       foreach ($allActiveItems as $item) {
         $facet = $facets[$item['facets'][0]];
-//        $facet_api = new FacetapiFacet($adapter, $facet);
-//        $process = new MyFacetapiFacetProcessor($facet_api);
-//        $process->MyinitUrlProcessor('facetapi_terms');
-//      $process->getFacetPrettyPathsAlias($facet);
+        // get term tranlation id.
         $tvalue = searchapi_i18n_links_block_get_field_item($item['field alias'], $item['value'], $lancode);
         $path = $process->getFacetPath($facet, array($tvalue), 0);
         $paths[] = trim($path);
-//          $term = searchapi_i18n_links_block_get_field_item_translation($item['field alias'], $item['value'], $link);
       }
       // get base path TODO:
       $process->fetchParams();
       array_unshift($paths, $process->getBasePath());
       $links[$lancode]['href'] = implode('', $paths);
     }
-//      unserialize($str)
-//      serialize($facet);
-//    dpm($search);
   }
 }
 
-// mysql.
+// get term tranlation id.
 function searchapi_i18n_links_block_get_field_item($field, $search_id, $lancode) {
   $field_array = explode(':', $field);
   $field = $bundle = false;
